@@ -9,13 +9,12 @@ ocr = easyocr.Reader(['en'],gpu=False)
 urls = ["https://drive.google.com/file/d/1mQ49zQdL3NSxxXOoMy-mT-RTaHIml2XF/view?usp=sharing" ,
         "https://drive.google.com/file/d/1zKOPjD--hbC4sbIJhjPh3wHxxgkkgjIs/view?usp=sharing" ,
         "https://drive.google.com/file/d/1rLgOmqTGKRdpfCDY2i949GOXwqsGk-fA/view?usp=sharing",
-        "https://drive.google.com/file/d/1l0IYWNUdXIZK3uVrs5Lf9uyXAyvuhCYw/view?usp=sharing"
         ]
-        # [ball, person,jersey_number,goal_post]
+        # [ball, person,jersey_number]
 
 
 path_location = config.workin_dir+'/ObjectDetection/models'
-filename = ["ball", "person", "jersey_number","goal_post"]
+filename = ["ball", "person", "jersey_number"]
 model= []
 for i, url in enumerate(urls):
 
@@ -105,28 +104,9 @@ def jersey_number(npimg):
         return None
 
 
-def goal_post(npimg):
-    original = npimg
-    imgs = [npimg[..., ::-1]]
-    # Inference
-    results = model[3](imgs).xyxy[0].cpu().numpy()
-    allperson = {'bb': [], 'confidence': [], 'class': [], 'cropped': []}
-    if len(results) > 0:
-        for p in results:
-            if p[-1] == 0:
-                x, y, x1, y1 = [round(i) for i in p[:4]]
-                allperson["bb"].append([x, y, x1 - x, y1 - y])
-                allperson["confidence"].append(p[4])
-                allperson["class"].append(p[-1])
-                allperson["cropped"].append(original[y:y1, x:x1])
-        return allperson
-
-    else:
-        return  None
-
 
 def roi(npimg):
-    return person(npimg), ball(npimg), goal_post(npimg)
+    return person(npimg), ball(npimg)
 
 
 def plot_one_box(frame, bb, color=(128, 128, 128), label=None, line_thickness=3):
@@ -138,6 +118,16 @@ def plot_one_box(frame, bb, color=(128, 128, 128), label=None, line_thickness=3)
     return frame
 
 
+def plot_many_box(frame, bbs, color=(128, 128, 128), label=None, line_thickness=3):
+    if label==None:
+        label = label*len(bbs)
+    for i, bb in enumerate(bbs):
+        x, y, w, h = bb
+        pt1 = (x, y)
+        pt2 = (x + w, y + h)
+        frame = cv2.rectangle(frame, pt1, pt2, color, 2)
+        frame = cv2.putText(frame, label[i], pt1, cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, line_thickness)
+    return frame
 
 
 def local_2_global(local_point,inner_bb):
